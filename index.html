@@ -172,7 +172,16 @@
     .ref-note { font-size: 12px; color: var(--g600); padding: 10px 16px; background: #f0f7ff; border-top: 1px solid #bbdefb; line-height: 1.5; }
 
     @media(max-width:420px) { .similar-grid, .mgrid { grid-template-columns: 1fr 1fr; } }
+      /* Excel tab */
+    #excel-raw { font-family: monospace; font-size: 13px; }
+    .xl-chip { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; margin-left:6px; }
+    .xl-ref  { background:#e3f2fd; color:#1565c0; }
+    .xl-cat  { background:#e8f5e9; color:#2e7d32; }
+    .xl-err  { background:#fff0ef; color:var(--red); }
+    .xl-actions { display:flex; gap:10px; margin-top:12px; }
+    .xl-actions .btn { flex:1; padding:14px; }
   </style>
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -189,7 +198,8 @@
 <div class="tabs">
   <button class="tab-btn active" id="t-buscar"  onclick="showTab('buscar')">🔍 Buscar</button>
   <button class="tab-btn"        id="t-rapido"  onclick="showTab('rapido')">⚡ Cotizar</button>
-  <button class="tab-btn"        id="t-subir"   onclick="showTab('subir')">📥 Subir Lista</button>
+  <button class="tab-btn"        id="t-excel"   onclick="showTab('excel')">📊 Excel</button>
+  <button class="tab-btn"        id="t-subir"   onclick="showTab('subir')">📥 Subir</button>
 </div>
 
 <!-- ═══ TAB: BUSCAR ═══════════════════════════ -->
@@ -232,6 +242,34 @@
     <div id="r-cat-detected" style="margin-top:14px;font-size:14px;color:var(--g600)"></div>
     <div id="price-card-rapido" class="price-card"></div>
     <div id="ref-card" class="ref-card hidden"></div>
+  </div>
+</div>
+
+<!-- ═══ TAB: EXCEL ═══════════════════════════ -->
+<div class="tab-content hidden" id="tab-excel">
+  <p style="font-size:14px;color:var(--g600);margin-bottom:14px">
+    Pega productos con su costo — calcula todos los precios comparando con proveedores reales.
+    <b>Un producto por línea.</b>
+  </p>
+  <div class="form-group">
+    <label>Descripción [TAB o 2+ espacios] Costo</label>
+    <textarea id="excel-raw" rows="10"
+      placeholder="Refrigeradora Samsung 14 pies    13685
+Sala Barcelona Honducamas    13209
+Estufa Gas Mabe 20 pulgadas    5175
+Lavadora Whirlpool 18Kg    10005
+TV Samsung 55 pulgadas 4K    12000
+Closet Maletero 4 puertas    11700"></textarea>
+  </div>
+  <button class="btn btn-red" onclick="procesarExcel()">⚡ Calcular precios</button>
+
+  <div id="excel-result" class="hidden" style="margin-top:16px">
+    <div id="excel-meta" style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px"></div>
+    <div id="excel-preview-wrap" class="csv-wrap"></div>
+    <div class="xl-actions">
+      <button class="btn btn-red"  onclick="descargarXLSX()">📥 Descargar .xlsx</button>
+      <button class="btn btn-gray" onclick="limpiarExcel()">✕ Limpiar</button>
+    </div>
   </div>
 </div>
 
@@ -870,10 +908,143 @@ function resetCSV() {
 }
 
 // ══════════════════════════════════════
+//  TAB: EXCEL — GENERADOR DE PRECIOS
+// ══════════════════════════════════════
+let excelRows = [];
+
+function parsearLinea(line) {
+  // Tab separado
+  let parts = line.split('\t');
+  if (parts.length >= 2) {
+    const desc = parts[0].trim();
+    const nums = parts.slice(1).map(p => parseFloat((p||'').replace(/[^\d.]/g,''))).filter(n=>n>0);
+    return { desc, costo: nums[0]||0 };
+  }
+  // Dos o más espacios como separador
+  const m2 = line.match(/^(.+?)\s{2,}([\d,]+\.?\d*)\s*$/);
+  if (m2) return { desc: m2[1].trim(), costo: parseFloat(m2[2].replace(/,/g,'')) };
+  // Último número en la línea
+  const m3 = line.match(/^([\s\S]+?)\s+([\d,]+\.?\d*)\s*$/);
+  if (m3) return { desc: m3[1].trim(), costo: parseFloat(m3[2].replace(/,/g,'')) };
+  return null;
+}
+
+function procesarExcel() {
+  const raw = document.getElementById('excel-raw').value.trim();
+  if (!raw) { toast('Pega datos primero'); return; }
+
+  const lines = raw.split(/\r?\n/).filter(l => l.trim());
+  excelRows = [];
+
+  for (const line of lines) {
+    const parsed = parsearLinea(line);
+    if (!parsed || !parsed.desc || !parsed.costo || parsed.costo <= 0) {
+      excelRows.push({ _err: true, DESCRIPCION: line, _raw: line });
+      continue;
+    }
+    const { desc, costo } = parsed;
+    const ref = buscarReferencia(desc, costo);
+    const cat = autoCategoria(desc);
+
+    if (ref) {
+      const mc  = ref.ref.contado / ref.ref.costo;
+      const mm  = cat ? (1 + cat.margen_mayoreo/100) : mc * 0.82;
+      excelRows.push({
+        _tipo:      'ref',
+        CATEGORIA:  ref.ref.cat.toUpperCase(),
+        PROVEEDOR:  '',
+        DESCRIPCION: desc,
+        COSTO:       costo,
+        MAYORISTA:   Math.round(costo * mm * 100) / 100,
+        PROMOCION:   '',
+        CONTADO:     Math.round(ref.contado * 100) / 100,
+        'TOTAL 6M':  ref.t6  ? Math.round(ref.t6  * 100) / 100 : '',
+        'PRIMA 6M':  '',
+        'CUOTA 6M':  ref.c6  ? Math.round(ref.c6  * 100) / 100 : '',
+        'TOTAL 12M': ref.t12 ? Math.round(ref.t12 * 100) / 100 : '',
+        'PRIMA 12M': '',
+        'CUOTA 12M': ref.c12 ? Math.round(ref.c12 * 100) / 100 : '',
+        '% MARGEN CONTADO': ref.pctContado + '%',
+        REFERENCIA:  ref.ref.nombre + ' · ' + ref.ref.proveedor + (ref.diffPct > 10 ? ' (±'+ref.diffPct+'% costo)' : ''),
+      });
+    } else if (cat) {
+      const px = calcPx(costo, cat);
+      excelRows.push({
+        _tipo:      'cat',
+        CATEGORIA:  cat.nombre,
+        PROVEEDOR:  '',
+        DESCRIPCION: desc,
+        COSTO:       costo,
+        MAYORISTA:   Math.round(px.mayoreo * 100) / 100,
+        PROMOCION:   Math.round(px.pagos   * 100) / 100,
+        CONTADO:     Math.round(px.cash    * 100) / 100,
+        'TOTAL 6M':  Math.round(px.t6  * 100) / 100,
+        'PRIMA 6M':  '',
+        'CUOTA 6M':  Math.round(px.c6  * 100) / 100,
+        'TOTAL 12M': Math.round(px.t12 * 100) / 100,
+        'PRIMA 12M': '',
+        'CUOTA 12M': Math.round(px.c12 * 100) / 100,
+        '% MARGEN CONTADO': cat.margen_cash + '%',
+        REFERENCIA:  'Margen categoría · ' + cat.nombre,
+      });
+    } else {
+      excelRows.push({ _err: true, DESCRIPCION: desc, COSTO: costo, REFERENCIA: 'Sin categoría detectada', _raw: line });
+    }
+  }
+
+  renderExcelPreview();
+}
+
+function renderExcelPreview() {
+  const ok  = excelRows.filter(r => !r._err).length;
+  const bad = excelRows.filter(r =>  r._err).length;
+  const cols = ['DESCRIPCION','COSTO','CONTADO','CUOTA 6M','CUOTA 12M','% MARGEN CONTADO','REFERENCIA'];
+
+  document.getElementById('excel-meta').innerHTML =
+    `<span style="color:#2e7d32">✓ ${ok} producto${ok!==1?'s':''} calculado${ok!==1?'s':''}</span>` +
+    (bad ? ` &nbsp;·&nbsp; <span style="color:var(--red)">✗ ${bad} sin parsear</span>` : '');
+
+  document.getElementById('excel-preview-wrap').innerHTML = `
+    <table>
+      <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${excelRows.map(r=>`
+        <tr class="${r._err?'row-err':r._tipo==='ref'?'row-ok':'row-warn'}">
+          ${cols.map(c=>`<td>${r[c]!==undefined?r[c]:''}</td>`).join('')}
+          <td>${r._err?'<span class="xl-chip xl-err">Error</span>':r._tipo==='ref'?'<span class="xl-chip xl-ref">Ref. real</span>':'<span class="xl-chip xl-cat">Categoría</span>'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  document.getElementById('excel-result').classList.remove('hidden');
+}
+
+function descargarXLSX() {
+  if (!excelRows.length) return;
+  if (typeof XLSX === 'undefined') { toast('Librería Excel aún cargando, intenta en un momento'); return; }
+
+  const data = excelRows.map(({ _err, _tipo, _raw, ...rest }) => rest);
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const keys = Object.keys(data[0] || {});
+  ws['!cols'] = keys.map(k => ({ wch: Math.max(k.length + 2, k === 'DESCRIPCION' ? 35 : k === 'REFERENCIA' ? 40 : 14) }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Precios La Roca');
+  XLSX.writeFile(wb, `Precios_LaRoca_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel descargado ✓', true);
+}
+
+function limpiarExcel() {
+  excelRows = [];
+  document.getElementById('excel-raw').value = '';
+  document.getElementById('excel-result').classList.add('hidden');
+}
+
+// ══════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════
 function showTab(tab) {
-  ['buscar','rapido','subir'].forEach(t => {
+  ['buscar','rapido','excel','subir'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
     document.getElementById('t-'+t).classList.toggle('active', t===tab);
   });
