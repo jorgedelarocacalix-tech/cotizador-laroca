@@ -180,6 +180,24 @@
     .xl-err  { background:#fff0ef; color:var(--red); }
     .xl-actions { display:flex; gap:10px; margin-top:12px; }
     .xl-actions .btn { flex:1; padding:14px; }
+
+    /* Comparar tab */
+    .cat-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+    .cat-pill { padding:8px 14px; border:2px solid var(--g200); border-radius:20px; background:white; font-size:13px; font-weight:700; cursor:pointer; color:var(--g600); }
+    .cat-pill.active { border-color:#2e7d32; color:#2e7d32; background:#f0fff4; }
+    .comp-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--g200); margin-top:12px; }
+    .comp-wrap table { width:100%; border-collapse:collapse; font-size:12px; }
+    .comp-wrap th { background:var(--g800); color:white; padding:9px 10px; text-align:left; white-space:nowrap; font-size:11px; }
+    .comp-wrap td { padding:9px 10px; border-top:1px solid var(--g100); }
+    .comp-best td { background:#f0fff4 !important; }
+    .comp-high td { background:#f9fff9; }
+    .comp-mid  td { background:white; }
+    .comp-low  td { background:#fffdf0; }
+    .mg-badge { display:inline-block; padding:2px 7px; border-radius:8px; font-weight:700; font-size:11px; }
+    .mg-high { background:#e8f5e9; color:#2e7d32; }
+    .mg-mid  { background:#e3f2fd; color:#1565c0; }
+    .mg-low  { background:#fff3e0; color:#e65100; }
+    .prov-tag { display:inline-block; padding:2px 7px; border-radius:6px; font-size:10px; font-weight:700; background:var(--g100); color:var(--g600); white-space:nowrap; }
   </style>
   <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -199,6 +217,7 @@
   <button class="tab-btn active" id="t-buscar"  onclick="showTab('buscar')">🔍 Buscar</button>
   <button class="tab-btn"        id="t-rapido"  onclick="showTab('rapido')">⚡ Cotizar</button>
   <button class="tab-btn"        id="t-excel"   onclick="showTab('excel')">📊 Excel</button>
+  <button class="tab-btn"        id="t-comp"    onclick="showTab('comp')">🔄 Comparar</button>
   <button class="tab-btn"        id="t-subir"   onclick="showTab('subir')">📥 Subir</button>
 </div>
 
@@ -242,6 +261,7 @@
     <div id="r-cat-detected" style="margin-top:14px;font-size:14px;color:var(--g600)"></div>
     <div id="price-card-rapido" class="price-card"></div>
     <div id="ref-card" class="ref-card hidden"></div>
+    <div id="mini-comp"></div>
   </div>
 </div>
 
@@ -269,6 +289,20 @@ Closet Maletero 4 puertas    11700"></textarea>
     <div class="xl-actions">
       <button class="btn btn-red"  onclick="descargarXLSX()">📥 Descargar .xlsx</button>
       <button class="btn btn-gray" onclick="limpiarExcel()">✕ Limpiar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: COMPARAR PROVEEDORES ══════════════════════ -->
+<div class="tab-content hidden" id="tab-comp">
+  <p style="font-size:14px;color:var(--g600);margin-bottom:14px">
+    Compara todos los productos de un tipo entre proveedores, ordenados por <b>margen de ganancia</b>.
+  </p>
+  <div class="cat-pills" id="comp-pills"></div>
+  <div id="comp-table-wrap">
+    <div class="empty" style="padding:32px 20px">
+      <div class="big">📊</div>
+      <p>Selecciona una categoría arriba<br>para ver la comparación</p>
     </div>
   </div>
 </div>
@@ -753,8 +787,10 @@ function cotizarRapido() {
   if (ref) {
     refEl.innerHTML = refCardHTML(ref);
     refEl.classList.remove('hidden');
+    document.getElementById('mini-comp').innerHTML = miniCompHTML(ref.ref.cat, costo);
   } else {
     refEl.classList.add('hidden');
+    document.getElementById('mini-comp').innerHTML = '';
   }
 
   document.getElementById('rapido-result').classList.remove('hidden');
@@ -1041,13 +1077,143 @@ function limpiarExcel() {
 }
 
 // ══════════════════════════════════════
+//  TAB: COMPARAR PROVEEDORES
+// ══════════════════════════════════════
+const COMP_CATS = [
+  { key:'refrigeradora', label:'❄️ Refris' },
+  { key:'estufa',        label:'🔥 Estufas' },
+  { key:'lavadora',      label:'🫧 Lavadoras' },
+  { key:'television',    label:'📺 TVs' },
+  { key:'aire',          label:'🌬️ Aires' },
+  { key:'sala',          label:'🛋️ Salas' },
+  { key:'closet',        label:'🚪 Closets' },
+  { key:'comedor',       label:'🍽️ Comedores' },
+  { key:'cabecera',      label:'🛏️ Cabeceras' },
+  { key:'recamara',      label:'🛏️ Recámaras' },
+];
+
+function initCompTab() {
+  const pills = document.getElementById('comp-pills');
+  if (pills.innerHTML) return;
+  pills.innerHTML = COMP_CATS.map(c =>
+    `<button class="cat-pill" id="cp-${c.key}" onclick="mostrarComparacion('${c.key}')">${c.label}</button>`
+  ).join('');
+}
+
+function mostrarComparacion(catKey) {
+  COMP_CATS.forEach(c => {
+    const el = document.getElementById('cp-'+c.key);
+    if (el) el.classList.toggle('active', c.key === catKey);
+  });
+
+  const pool = REF.filter(r => r.cat === catKey)
+    .map(r => ({ ...r, pct: Math.round((r.contado / r.costo - 1) * 100) }))
+    .sort((a, b) => b.pct - a.pct);
+
+  if (!pool.length) {
+    document.getElementById('comp-table-wrap').innerHTML =
+      '<p style="text-align:center;color:var(--g400);padding:24px">Sin datos para esta categoría</p>';
+    return;
+  }
+
+  const provs = [...new Set(pool.map(r => r.proveedor))];
+  const catLabel = COMP_CATS.find(c => c.key === catKey)?.label || catKey;
+
+  const rows = pool.map((r, i) => {
+    const isBest = i === 0;
+    const cls = isBest ? 'comp-best' : r.pct >= 65 ? 'comp-high' : r.pct >= 40 ? 'comp-mid' : 'comp-low';
+    const mgCls = r.pct >= 65 ? 'mg-high' : r.pct >= 40 ? 'mg-mid' : 'mg-low';
+    const pct12 = r.t12 ? Math.round((r.t12 / r.costo - 1) * 100) : null;
+    return `<tr class="${cls}">
+      <td style="text-align:center;font-weight:700;color:var(--g400)">${isBest ? '⭐' : i + 1}</td>
+      <td><span class="prov-tag">${r.proveedor}</span></td>
+      <td style="font-size:12px;white-space:normal;min-width:130px">${r.nombre}</td>
+      <td style="text-align:right;white-space:nowrap">${lps(r.costo)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${lps(r.contado)}</td>
+      <td style="text-align:center"><span class="mg-badge ${mgCls}">+${r.pct}%</span></td>
+      <td style="text-align:right;white-space:nowrap">${r.t12 ? lps(r.t12) : '—'}</td>
+      <td style="text-align:center">${pct12 ? `<span class="mg-badge mg-mid">+${pct12}%</span>` : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('comp-table-wrap').innerHTML = `
+    <p style="font-size:13px;color:var(--g600);margin-bottom:4px">
+      ${catLabel} — <b>${pool.length} productos</b> de <b>${provs.length} proveedor${provs.length>1?'es':''}</b>: ${provs.join(' · ')}
+    </p>
+    <div class="comp-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Proveedor</th><th>Producto</th>
+          <th style="text-align:right">Costo</th>
+          <th style="text-align:right">Contado</th>
+          <th style="text-align:center">% Margen</th>
+          <th style="text-align:right">Total 12M</th>
+          <th style="text-align:center">% 12M</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--g400);margin-top:8px;line-height:1.6">
+      ⭐ mejor margen &nbsp;·&nbsp; 🟢 alto (+65%) &nbsp;·&nbsp; 🔵 medio (+40%) &nbsp;·&nbsp; 🟡 bajo (-40%)
+    </p>`;
+}
+
+function miniCompHTML(catKey, costoInput) {
+  const pool = REF.filter(r => r.cat === catKey)
+    .map(r => ({ ...r, pct: Math.round((r.contado / r.costo - 1) * 100) }))
+    .sort((a, b) => b.pct - a.pct);
+  if (pool.length <= 1) return '';
+
+  const show = pool.slice(0, 5);
+  const closest = [...pool].sort((a, b) =>
+    Math.abs(a.costo - costoInput) - Math.abs(b.costo - costoInput))[0];
+  const catLabel = COMP_CATS.find(c => c.key === catKey)?.label || catKey;
+
+  const rows = show.map(r => {
+    const isClose = r === closest;
+    const mgCls = r.pct >= 65 ? 'mg-high' : r.pct >= 40 ? 'mg-mid' : 'mg-low';
+    return `<tr${isClose ? ' style="background:#fffde7"' : ''}>
+      <td><span class="prov-tag">${r.proveedor}</span></td>
+      <td style="font-size:12px;white-space:normal">${r.nombre}${isClose ? ' <b style="color:#f9a825;font-size:10px">◀ similar</b>' : ''}</td>
+      <td style="text-align:right;font-size:12px;white-space:nowrap">${lps(r.costo)}</td>
+      <td style="text-align:center"><span class="mg-badge ${mgCls}">+${r.pct}%</span></td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div style="background:white;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;border:2px solid #c8e6c9;margin-top:12px">
+      <div style="background:#2e7d32;color:white;padding:12px 16px">
+        <div style="font-size:14px;font-weight:700">🔄 Comparación — ${catLabel}</div>
+        <div style="font-size:12px;opacity:0.85;margin-top:2px">Top 5 por margen · ${pool.length} productos disponibles</div>
+      </div>
+      <div class="comp-wrap" style="margin:0;border:none;border-radius:0">
+        <table>
+          <thead><tr>
+            <th>Proveedor</th><th>Producto</th>
+            <th style="text-align:right">Costo</th>
+            <th style="text-align:center">% Margen</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="padding:10px 16px;border-top:1px solid var(--g100);text-align:center">
+        <button onclick="showTab('comp');mostrarComparacion('${catKey}')"
+                style="background:none;border:none;color:#2e7d32;font-size:13px;font-weight:700;cursor:pointer">
+          Ver los ${pool.length} productos en detalle ↗
+        </button>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════
 function showTab(tab) {
-  ['buscar','rapido','excel','subir'].forEach(t => {
+  ['buscar','rapido','excel','comp','subir'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
     document.getElementById('t-'+t).classList.toggle('active', t===tab);
   });
+  if (tab === 'comp') initCompTab();
 }
 
 // ══════════════════════════════════════
