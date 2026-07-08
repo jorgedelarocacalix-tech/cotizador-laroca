@@ -214,15 +214,13 @@
 
 <!-- Tabs -->
 <div class="tabs">
-  <button class="tab-btn active" id="t-buscar"  onclick="showTab('buscar')">🔍 Buscar</button>
-  <button class="tab-btn"        id="t-rapido"  onclick="showTab('rapido')">⚡ Cotizar</button>
-  <button class="tab-btn"        id="t-excel"   onclick="showTab('excel')">📊 Excel</button>
+  <button class="tab-btn active" id="t-rapido"  onclick="showTab('rapido')">⚡ Cotizar</button>
   <button class="tab-btn"        id="t-comp"    onclick="showTab('comp')">🔄 Comparar</button>
   <button class="tab-btn"        id="t-subir"   onclick="showTab('subir')">📥 Subir</button>
 </div>
 
-<!-- ═══ TAB: BUSCAR ═══════════════════════════ -->
-<div class="tab-content" id="tab-buscar">
+<!-- ═══ TAB: BUSCAR (oculto) ═══════════════════════════ -->
+<div class="tab-content hidden" id="tab-buscar">
   <div class="search-wrap">
     <span class="search-ico">🔍</span>
     <input type="text" id="search-q" placeholder="Buscar producto por nombre o código…"
@@ -243,7 +241,7 @@
 </div>
 
 <!-- ═══ TAB: COTIZAR RÁPIDO ═══════════════════ -->
-<div class="tab-content hidden" id="tab-rapido">
+<div class="tab-content" id="tab-rapido">
   <div class="form-group">
     <label>Descripción del producto</label>
     <textarea id="r-desc" placeholder="Ej: Honda CB125F moto de trabajo 125cc azul&#10;&#10;El sistema detecta automáticamente la categoría según el texto." rows="3"></textarea>
@@ -1451,7 +1449,7 @@ function miniCompHTML(catKey, costoInput) {
 //  TABS
 // ══════════════════════════════════════
 function showTab(tab) {
-  ['buscar','rapido','excel','comp','subir'].forEach(t => {
+  ['rapido','comp','subir'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
     document.getElementById('t-'+t).classList.toggle('active', t===tab);
   });
