@@ -866,11 +866,16 @@ function cotizarRapido() {
   const px = calcPx(costo, cat);
   document.getElementById('r-cat-detected').innerHTML =
     `Categoría detectada: <span class="auto-cat ${cat.tipo}">${cat.nombre}</span>`;
-  document.getElementById('price-card-rapido').innerHTML = priceCardHTML(desc, `Costo: ${lps(costo)}`, px);
 
   const refEl = document.getElementById('ref-card');
   const ref = buscarReferencia(desc, costo);
   if (ref) {
+    // Aplicar piso: precios de venta nunca menores a los de la referencia de mercado
+    if (ref.mayoreo)  px.mayoreo = Math.max(px.mayoreo, ref.mayoreo);
+    if (ref.promo)    px.pagos   = Math.max(px.pagos,   ref.promo);
+    if (ref.contado)  px.cash    = Math.max(px.cash,    ref.contado);
+    if (ref.t6)  { px.t6 = Math.max(px.t6, ref.t6);  px.c6  = Math.max(px.c6,  ref.c6  || ref.t6/6);  }
+    if (ref.t12) { px.t12= Math.max(px.t12,ref.t12); px.c12 = Math.max(px.c12, ref.c12 || ref.t12/12); }
     refEl.innerHTML = refCardHTML(ref);
     refEl.classList.remove('hidden');
     document.getElementById('mini-comp').innerHTML = miniCompHTML(ref.ref.cat, costo);
@@ -878,6 +883,8 @@ function cotizarRapido() {
     refEl.classList.add('hidden');
     document.getElementById('mini-comp').innerHTML = '';
   }
+
+  document.getElementById('price-card-rapido').innerHTML = priceCardHTML(desc, `Costo: ${lps(costo)}`, px);
 
   document.getElementById('rapido-result').classList.remove('hidden');
 }
