@@ -633,8 +633,15 @@ function buscarReferencia(desc, costo) {
   const mT6      = ref.t6  ? ref.t6  / ref.costo : null;
   const mT12     = ref.t12 ? ref.t12 / ref.costo : null;
 
-  const mMayoreo = ref.mayoreo ? ref.mayoreo / ref.costo : null;
-  const mPromo   = ref.promo   ? ref.promo   / ref.costo : null;
+  // Ratio mayoreo/promo: usar el real del proveedor, si no hay usar margen de categoría
+  const catObj   = catForRef(catKey);
+  const mMayoreo = ref.mayoreo
+    ? ref.mayoreo / ref.costo
+    : (catObj ? 1 + catObj.margen_mayoreo / 100 : null);
+  const mPromo   = ref.promo
+    ? ref.promo / ref.costo
+    : (catObj ? 1 + catObj.margen_pagos   / 100 : null);
+
   return {
     ref,
     costoInput: costo,
@@ -738,7 +745,7 @@ function priceCardHTML(titulo, subtitulo, px) {
       <div class="price-right"><div class="price-main">${lps(px.mayoreo)}</div></div>
     </div>
     <div class="price-row">
-      <div class="price-label"><div class="ico ico-3">📋</div>Contado en Pagos</div>
+      <div class="price-label"><div class="ico ico-3">🏷️</div>Promoción / Contado</div>
       <div class="price-right"><div class="price-main">${lps(px.pagos)}</div></div>
     </div>
     <div class="divider">Financiamiento</div>
