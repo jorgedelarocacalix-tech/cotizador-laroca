@@ -609,6 +609,22 @@ function buscarReferencia(desc, costo) {
   const byBrand = marcaKey ? pool.filter(r => r.marca === marcaKey) : [];
   if (byBrand.length) pool = byBrand;
 
+  // Filtrar por tamaño de cama si se menciona en la descripción
+  if (catKey === 'cama') {
+    const sizeMap = [
+      { rx: /king/,                       key: 'king'  },
+      { rx: /queen/,                      key: 'queen' },
+      { rx: /matrimonial|matri\b|doble/,  key: 'matri' },
+      { rx: /unipersonal|unip\b|individual|sencill/i, key: 'unip' },
+    ];
+    for (const { rx, key } of sizeMap) {
+      if (rx.test(t)) {
+        const bySize = pool.filter(r => r.nombre.toLowerCase().includes(key));
+        if (bySize.length) { pool = bySize; break; }
+      }
+    }
+  }
+
   // Más cercano por costo
   pool.sort((a, b) => Math.abs(a.costo - costo) - Math.abs(b.costo - costo));
   const ref = pool[0];
