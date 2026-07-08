@@ -504,13 +504,56 @@ const REF = [
   {cat:'comedor',marca:'invpa',nombre:'Comedor Amazonas 6 Sillas',costo:15065,contado:21365,t6:27487,t12:33609,proveedor:'INV. PADILLA'},
   {cat:'comedor',marca:'invpa',nombre:'Comedor Amazonas 4 Sillas',costo:10955,contado:14745,t6:18535,t12:21985,proveedor:'INV. PADILLA'},
 
-  // ── CAMAS / RECÁMARAS ───────────────
-  {cat:'cabecera',marca:'honducamas',nombre:'Cabecera Matrimonial Princess',costo:2428,contado:4828,t6:7578,proveedor:'HONDUCAMAS'},
-  {cat:'cabecera',marca:'honducamas',nombre:'Cabecera Queen Princess',costo:2707,contado:5336,t6:8086,proveedor:'HONDUCAMAS'},
-  {cat:'cabecera',marca:'honducamas',nombre:'Cabecera King Princess',costo:3412,contado:5912,t6:8662,proveedor:'HONDUCAMAS'},
+  // ── CAMAS / RECÁMARAS (HONDUCAMAS) ──
+  {cat:'cabecera',marca:'honducamas',nombre:'Cabecera Matrimonial Princess',costo:2428,mayoreo:3628,promo:3628,contado:4828,t6:7578,proveedor:'HONDUCAMAS'},
+  {cat:'cabecera',marca:'honducamas',nombre:'Cabecera Queen Princess',costo:2707,mayoreo:4086,promo:4086,contado:5336,t6:8086,proveedor:'HONDUCAMAS'},
+  {cat:'cabecera',marca:'honducamas',nombre:'Cabecera King Princess',costo:3412,mayoreo:4662,promo:4662,contado:5912,t6:8662,proveedor:'HONDUCAMAS'},
   {cat:'recamara',marca:'honducamas',nombre:'Recámara Matrimonial Emanuel c/pie de cama',costo:7330,contado:12780,t6:17679,t12:22929,proveedor:'HONDUCAMAS'},
   {cat:'recamara',marca:'honducamas',nombre:'Recámara Queen Emanuel c/baúl',costo:9580,contado:15580,t6:21030,t12:26280,proveedor:'HONDUCAMAS'},
   {cat:'recamara',marca:'honducamas',nombre:'Recámara King Emanuel caramelo',costo:9468,contado:16468,t6:22918,t12:29168,proveedor:'HONDUCAMAS'},
+
+  // ── CAMAS DIVECO (Septiembre 2025) ──
+  // Unipersonal
+  {cat:'cama',marca:'diveco',nombre:'Cama Unip. BD Estandar Plus',costo:3373.61,mayoreo:4032.64,promo:4362.16,contado:5123.61,t6:7123.63,c6:989.39,t12:9373.43,c12:716.03,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Unip. Estrella',costo:3186.94,mayoreo:3795.77,promo:4100.18,contado:4786.94,t6:6786.97,c6:942.63,t12:9036.77,c12:690.31,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Unip. PAW PATROL',costo:4109.86,mayoreo:4967.85,promo:5396.85,contado:5822.86,t6:7837.86,c6:1088.59,t12:10070.86,c12:769.30,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Unip. Top 20',costo:7956.00,mayoreo:9485.24,promo:10249.86,contado:10356.00,t6:12606.00,c6:1750.83,t12:14955.80,c12:1142.46,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Unip. Futbolera HN',costo:5210.10,mayoreo:6460.10,promo:7009.10,contado:7209.10,t6:9209.10,c6:1279.04,t12:11130.10,c12:850.22,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Unip. Antiestress Ortop',costo:4888.01,mayoreo:5865.62,promo:6354.42,contado:6606.01,t6:8597.01,c6:1194.03,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Unip. Antiestress DL',costo:4468.90,mayoreo:5326.89,promo:5755.89,contado:6181.90,t6:8181.90,c6:1136.37,t12:null,c12:null,proveedor:'DIVECO'},
+  // Matrimonial
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. BD Estandar Plus',costo:4117.52,mayoreo:4924.84,promo:5517.52,contado:6527.74,t6:8587.74,c6:1192.74,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. Estrella',costo:3953.80,mayoreo:4709.01,promo:5352.80,contado:5843.61,t6:7853.61,c6:1090.78,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. Original Ortopedica',costo:9240.00,mayoreo:10930.00,promo:12012.00,contado:12990.00,t6:15990.00,c6:2220.00,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. Doble Sense',costo:8229.72,mayoreo:9919.72,promo:10655.22,contado:11351.72,t6:13361.72,c6:1855.79,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. Top 20 Firme',costo:9592.08,mayoreo:11392.08,promo:12558.37,contado:13291.47,t6:15301.47,c6:2125.20,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. Top 30 Medio',costo:11781.00,mayoreo:14031.00,promo:14681.00,contado:16040.00,t6:18040.00,c6:2505.56,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. Serta 2BTS',costo:12653.55,mayoreo:15153.55,promo:16003.55,contado:18003.55,t6:21003.55,c6:2917.16,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri. Futbolera HN',costo:6144.13,mayoreo:7627.22,promo:9110.42,contado:9843.52,t6:11853.52,c6:1646.32,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri Antiestress 2BTS',costo:6848.46,mayoreo:8173.20,promo:8835.60,contado:10608.46,t6:12618.46,c6:1752.56,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri Antiestress Orto',costo:6105.84,mayoreo:7291.44,promo:7884.24,contado:9227.84,t6:11237.84,c6:1560.81,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri Antiestress DL',costo:5672.94,mayoreo:6753.54,promo:7293.74,contado:8794.94,t6:10804.94,c6:1500.69,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Matri Catracha',costo:5937.51,mayoreo:7087.51,promo:7632.10,contado:9059.51,t6:11069.51,c6:1537.43,t12:null,c12:null,proveedor:'DIVECO'},
+  // Queen
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Original Ortopedica',costo:10500.00,mayoreo:12961.00,promo:13650.00,contado:18822.00,t6:21822.00,c6:3030.83,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Doble Sense',costo:9426.80,mayoreo:11816.80,promo:12576.80,contado:13426.80,t6:15436.80,c6:2143.72,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Top 20 Firme',costo:10900.00,mayoreo:13250.00,promo:14250.00,contado:15590.00,t6:17600.00,c6:2444.44,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Top 30 Medio',costo:12954.00,mayoreo:15454.00,promo:16304.00,contado:17504.00,t6:19514.00,c6:2710.28,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Serta 2BTS',costo:14729.00,mayoreo:17229.00,promo:18529.00,contado:19729.00,t6:22729.00,c6:3156.81,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Futbolera HN',costo:7154.66,mayoreo:8554.66,promo:9404.66,contado:11609.66,t6:13619.66,c6:1891.62,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Antiestress 2BTS',costo:7716.90,mayoreo:9116.90,promo:9966.90,contado:12171.90,t6:14181.90,c6:1969.71,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Antiestress Orto',costo:7269.02,mayoreo:8669.02,promo:9519.02,contado:11536.12,t6:13546.12,c6:1881.40,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Antiestress DL',costo:6697.34,mayoreo:8097.34,promo:8619.34,contado:10964.34,t6:12974.34,c6:1801.99,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama Queen Catracha',costo:6684.04,mayoreo:8084.04,promo:8606.04,contado:10951.04,t6:12961.04,c6:1800.14,t12:null,c12:null,proveedor:'DIVECO'},
+  // King
+  {cat:'cama',marca:'diveco',nombre:'Cama King Original Ortopedica',costo:14700.00,mayoreo:16905.00,promo:18375.00,contado:20150.00,t6:23150.00,c6:3215.28,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama King Doble Sense',costo:12559.98,mayoreo:14764.98,promo:15641.73,contado:18009.98,t6:21009.98,c6:2918.05,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama King Top 20 Firme',costo:14800.01,mayoreo:17014.77,promo:18722.01,contado:20250.01,t6:23250.01,c6:3229.17,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama King Top 30',costo:17097.75,mayoreo:19603.18,promo:21273.47,contado:22856.75,t6:25856.75,c6:3591.21,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama King Antiestress 2BTS',costo:10390.65,mayoreo:12240.65,promo:14140.65,contado:15281.65,t6:18281.65,c6:2539.12,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama King Antiestress Orto',costo:9946.90,mayoreo:11796.90,promo:13696.90,contado:14837.90,t6:17837.90,c6:2477.49,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama King Antiestress DL',costo:8925.89,mayoreo:10775.89,promo:12175.89,contado:13816.85,t6:16816.85,c6:2335.67,t12:null,c12:null,proveedor:'DIVECO'},
+  {cat:'cama',marca:'diveco',nombre:'Cama King Catracha',costo:9148.69,mayoreo:10998.69,promo:12398.69,contado:14018.69,t6:17018.69,c6:2363.71,t12:null,c12:null,proveedor:'DIVECO'},
 ];
 
 // Palabras clave por categoría de referencia
@@ -524,7 +567,8 @@ const REF_CATS = {
   comedor:       /comedor|mesa de comedor/,
   closet:        /closet|clóset|maletero|armario/,
   chifonier:     /chifonier|cómoda|comoda/,
-  cabecera:      /cabecera/,
+  cama:          /\bcama\b|colch[oó]n|camarote/,
+  cabecera:      /cabecera|\bpie de cama\b/,
   recamara:      /recámara|recamara|dormitorio completo/,
 };
 
@@ -573,14 +617,21 @@ function buscarReferencia(desc, costo) {
   const mT6      = ref.t6  ? ref.t6  / ref.costo : null;
   const mT12     = ref.t12 ? ref.t12 / ref.costo : null;
 
+  const mMayoreo = ref.mayoreo ? ref.mayoreo / ref.costo : null;
+  const mPromo   = ref.promo   ? ref.promo   / ref.costo : null;
   return {
     ref,
+    costoInput: costo,
+    mayoreo: mMayoreo ? Math.round(costo * mMayoreo * 100)/100 : null,
+    promo:   mPromo   ? Math.round(costo * mPromo   * 100)/100 : null,
     contado: costo * mContado,
     t6:      mT6  ? costo * mT6  : null,
     c6:      mT6  ? (costo * mT6) / 6   : null,
     t12:     mT12 ? costo * mT12 : null,
     c12:     mT12 ? (costo * mT12) / 12 : null,
     pctContado: Math.round((mContado - 1) * 100),
+    pctMayoreo: mMayoreo ? Math.round((mMayoreo - 1) * 100) : null,
+    pctPromo:   mPromo   ? Math.round((mPromo   - 1) * 100) : null,
     pctT6:      mT6  ? Math.round((mT6  - 1) * 100) : null,
     pctT12:     mT12 ? Math.round((mT12 - 1) * 100) : null,
     costoRef:   ref.costo,
@@ -590,7 +641,9 @@ function buscarReferencia(desc, costo) {
 
 function refCardHTML(r) {
   const rows = [
-    { ico:'💵', label:'Cash sugerido',    price: r.contado, sub: `+${r.pctContado}% sobre costo` },
+    r.mayoreo ? { ico:'🏪', label:'Mayoreo',         price: r.mayoreo, sub: `+${r.pctMayoreo}% sobre costo` } : null,
+    r.promo   ? { ico:'🏷️', label:'Promoción',       price: r.promo,   sub: `+${r.pctPromo}% sobre costo` }   : null,
+    { ico:'💵', label:'Contado',          price: r.contado, sub: `+${r.pctContado}% sobre costo` },
     r.t6  ? { ico:'📅', label:'6 Meses (total)',  price: r.t6,  sub: `Cuota: ${lps(r.c6)}/mes · +${r.pctT6}%` }  : null,
     r.t12 ? { ico:'📆', label:'12 Meses (total)', price: r.t12, sub: `Cuota: ${lps(r.c12)}/mes · +${r.pctT12}%` } : null,
   ].filter(Boolean);
@@ -1139,6 +1192,7 @@ const COMP_CATS = [
   { key:'sala',          label:'🛋️ Salas' },
   { key:'closet',        label:'🚪 Closets' },
   { key:'comedor',       label:'🍽️ Comedores' },
+  { key:'cama',          label:'🛏️ Camas DIVECO' },
   { key:'cabecera',      label:'🛏️ Cabeceras' },
   { key:'recamara',      label:'🛏️ Recámaras' },
 ];
@@ -1157,17 +1211,18 @@ function catForRef(catKey) {
     lavadora:'Electrodomésticos', television:'Electrodomésticos',
     aire:'Electrodomésticos', sala:'Sala y Comedor',
     comedor:'Sala y Comedor', closet:'Dormitorio',
-    chifonier:'Dormitorio', cabecera:'Dormitorio', recamara:'Dormitorio',
+    cama:'Dormitorio', chifonier:'Dormitorio', cabecera:'Dormitorio', recamara:'Dormitorio',
   };
   return cats.find(c => c.nombre === map[catKey]) || cats[0];
 }
 
 function enrichRef(r, catObj) {
-  const mayoreo = catObj ? Math.round(r.costo * (1 + catObj.margen_mayoreo/100) * 100)/100 : null;
-  const promo   = catObj ? Math.round(r.costo * (1 + catObj.margen_pagos/100)   * 100)/100 : null;
+  // Usar precios reales del REF si existen, sino calcular con márgenes de categoría
+  const mayoreo = r.mayoreo || (catObj ? Math.round(r.costo * (1 + catObj.margen_mayoreo/100) * 100)/100 : null);
+  const promo   = r.promo   || (catObj ? Math.round(r.costo * (1 + catObj.margen_pagos/100)   * 100)/100 : null);
   const pct     = Math.round((r.contado / r.costo - 1) * 100);
-  const c6      = r.t6  ? Math.round(r.t6  / 6  * 100)/100 : null;
-  const c12     = r.t12 ? Math.round(r.t12 / 12 * 100)/100 : null;
+  const c6      = r.c6  || (r.t6  ? Math.round(r.t6  / 6  * 100)/100 : null);
+  const c12     = r.c12 || (r.t12 ? Math.round(r.t12 / 12 * 100)/100 : null);
   return { ...r, mayoreo, promo, pct, c6, c12 };
 }
 
