@@ -1100,14 +1100,35 @@ function initCompTab() {
   ).join('');
 }
 
+function catForRef(catKey) {
+  const map = {
+    refrigeradora:'Electrodomésticos', estufa:'Electrodomésticos',
+    lavadora:'Electrodomésticos', television:'Electrodomésticos',
+    aire:'Electrodomésticos', sala:'Sala y Comedor',
+    comedor:'Sala y Comedor', closet:'Dormitorio',
+    chifonier:'Dormitorio', cabecera:'Dormitorio', recamara:'Dormitorio',
+  };
+  return cats.find(c => c.nombre === map[catKey]) || cats[0];
+}
+
+function enrichRef(r, catObj) {
+  const mayoreo = catObj ? Math.round(r.costo * (1 + catObj.margen_mayoreo/100) * 100)/100 : null;
+  const promo   = catObj ? Math.round(r.costo * (1 + catObj.margen_pagos/100)   * 100)/100 : null;
+  const pct     = Math.round((r.contado / r.costo - 1) * 100);
+  const c6      = r.t6  ? Math.round(r.t6  / 6  * 100)/100 : null;
+  const c12     = r.t12 ? Math.round(r.t12 / 12 * 100)/100 : null;
+  return { ...r, mayoreo, promo, pct, c6, c12 };
+}
+
 function mostrarComparacion(catKey) {
   COMP_CATS.forEach(c => {
     const el = document.getElementById('cp-'+c.key);
     if (el) el.classList.toggle('active', c.key === catKey);
   });
 
+  const catObj = catForRef(catKey);
   const pool = REF.filter(r => r.cat === catKey)
-    .map(r => ({ ...r, pct: Math.round((r.contado / r.costo - 1) * 100) }))
+    .map(r => enrichRef(r, catObj))
     .sort((a, b) => b.pct - a.pct);
 
   if (!pool.length) {
@@ -1116,23 +1137,26 @@ function mostrarComparacion(catKey) {
     return;
   }
 
-  const provs = [...new Set(pool.map(r => r.proveedor))];
+  const provs    = [...new Set(pool.map(r => r.proveedor))];
   const catLabel = COMP_CATS.find(c => c.key === catKey)?.label || catKey;
 
   const rows = pool.map((r, i) => {
     const isBest = i === 0;
-    const cls = isBest ? 'comp-best' : r.pct >= 65 ? 'comp-high' : r.pct >= 40 ? 'comp-mid' : 'comp-low';
-    const mgCls = r.pct >= 65 ? 'mg-high' : r.pct >= 40 ? 'mg-mid' : 'mg-low';
-    const pct12 = r.t12 ? Math.round((r.t12 / r.costo - 1) * 100) : null;
+    const cls    = isBest ? 'comp-best' : r.pct >= 65 ? 'comp-high' : r.pct >= 40 ? 'comp-mid' : 'comp-low';
+    const mgCls  = r.pct >= 65 ? 'mg-high' : r.pct >= 40 ? 'mg-mid' : 'mg-low';
     return `<tr class="${cls}">
-      <td style="text-align:center;font-weight:700;color:var(--g400)">${isBest ? '⭐' : i + 1}</td>
+      <td style="text-align:center;font-weight:700;color:var(--g400)">${isBest?'⭐':i+1}</td>
       <td><span class="prov-tag">${r.proveedor}</span></td>
-      <td style="font-size:12px;white-space:normal;min-width:130px">${r.nombre}</td>
+      <td style="font-size:12px;white-space:normal;min-width:140px">${r.nombre}</td>
       <td style="text-align:right;white-space:nowrap">${lps(r.costo)}</td>
+      <td style="text-align:right;white-space:nowrap">${r.mayoreo?lps(r.mayoreo):'—'}</td>
+      <td style="text-align:right;white-space:nowrap">${r.promo?lps(r.promo):'—'}</td>
       <td style="text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${lps(r.contado)}</td>
-      <td style="text-align:center"><span class="mg-badge ${mgCls}">+${r.pct}%</span></td>
-      <td style="text-align:right;white-space:nowrap">${r.t12 ? lps(r.t12) : '—'}</td>
-      <td style="text-align:center">${pct12 ? `<span class="mg-badge mg-mid">+${pct12}%</span>` : '—'}</td>
+      <td style="text-align:right;white-space:nowrap">${r.t6?lps(r.t6):'—'}</td>
+      <td style="text-align:right;white-space:nowrap;color:#1565c0;font-weight:700">${r.c6?lps(r.c6):'—'}</td>
+      <td style="text-align:right;white-space:nowrap">${r.t12?lps(r.t12):'—'}</td>
+      <td style="text-align:right;white-space:nowrap;color:#6a1b9a;font-weight:700">${r.c12?lps(r.c12):'—'}</td>
+      <td style="text-align:center;white-space:nowrap"><span class="mg-badge ${mgCls}">+${r.pct}%</span></td>
     </tr>`;
   }).join('');
 
@@ -1145,37 +1169,48 @@ function mostrarComparacion(catKey) {
         <thead><tr>
           <th>#</th><th>Proveedor</th><th>Producto</th>
           <th style="text-align:right">Costo</th>
+          <th style="text-align:right">Mayoreo</th>
+          <th style="text-align:right">Promo</th>
           <th style="text-align:right">Contado</th>
-          <th style="text-align:center">% Margen</th>
+          <th style="text-align:right">Total 6M</th>
+          <th style="text-align:right">Cuota 6M</th>
           <th style="text-align:right">Total 12M</th>
-          <th style="text-align:center">% 12M</th>
+          <th style="text-align:right">Cuota 12M</th>
+          <th style="text-align:center">% Margen</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
     <p style="font-size:11px;color:var(--g400);margin-top:8px;line-height:1.6">
-      ⭐ mejor margen &nbsp;·&nbsp; 🟢 alto (+65%) &nbsp;·&nbsp; 🔵 medio (+40%) &nbsp;·&nbsp; 🟡 bajo (-40%)
+      ⭐ mejor margen &nbsp;·&nbsp; 🟢 alto (+65%) &nbsp;·&nbsp; 🔵 medio (+40%) &nbsp;·&nbsp; 🟡 bajo (&lt;40%)
+      &nbsp;·&nbsp; Mayoreo/Promo calculados con márgenes La Roca · Contado/6M/12M = precios reales de proveedor
     </p>`;
 }
 
 function miniCompHTML(catKey, costoInput) {
+  const catObj = catForRef(catKey);
   const pool = REF.filter(r => r.cat === catKey)
-    .map(r => ({ ...r, pct: Math.round((r.contado / r.costo - 1) * 100) }))
+    .map(r => enrichRef(r, catObj))
     .sort((a, b) => b.pct - a.pct);
   if (pool.length <= 1) return '';
 
-  const show = pool.slice(0, 5);
+  const show    = pool.slice(0, 5);
   const closest = [...pool].sort((a, b) =>
     Math.abs(a.costo - costoInput) - Math.abs(b.costo - costoInput))[0];
   const catLabel = COMP_CATS.find(c => c.key === catKey)?.label || catKey;
 
   const rows = show.map(r => {
     const isClose = r === closest;
-    const mgCls = r.pct >= 65 ? 'mg-high' : r.pct >= 40 ? 'mg-mid' : 'mg-low';
-    return `<tr${isClose ? ' style="background:#fffde7"' : ''}>
+    const mgCls   = r.pct >= 65 ? 'mg-high' : r.pct >= 40 ? 'mg-mid' : 'mg-low';
+    return `<tr${isClose?' style="background:#fffde7"':''}>
       <td><span class="prov-tag">${r.proveedor}</span></td>
-      <td style="font-size:12px;white-space:normal">${r.nombre}${isClose ? ' <b style="color:#f9a825;font-size:10px">◀ similar</b>' : ''}</td>
-      <td style="text-align:right;font-size:12px;white-space:nowrap">${lps(r.costo)}</td>
+      <td style="font-size:11px;white-space:normal">${r.nombre}${isClose?' <b style="color:#f9a825;font-size:10px">◀</b>':''}</td>
+      <td style="text-align:right;font-size:11px;white-space:nowrap">${lps(r.costo)}</td>
+      <td style="text-align:right;font-size:11px;white-space:nowrap">${r.mayoreo?lps(r.mayoreo):'—'}</td>
+      <td style="text-align:right;font-size:11px;white-space:nowrap">${r.promo?lps(r.promo):'—'}</td>
+      <td style="text-align:right;font-weight:700;font-size:11px;color:var(--red);white-space:nowrap">${lps(r.contado)}</td>
+      <td style="text-align:right;font-size:11px;color:#1565c0;font-weight:700;white-space:nowrap">${r.c6?lps(r.c6):'—'}</td>
+      <td style="text-align:right;font-size:11px;color:#6a1b9a;font-weight:700;white-space:nowrap">${r.c12?lps(r.c12):'—'}</td>
       <td style="text-align:center"><span class="mg-badge ${mgCls}">+${r.pct}%</span></td>
     </tr>`;
   }).join('');
@@ -1191,6 +1226,11 @@ function miniCompHTML(catKey, costoInput) {
           <thead><tr>
             <th>Proveedor</th><th>Producto</th>
             <th style="text-align:right">Costo</th>
+            <th style="text-align:right">Mayoreo</th>
+            <th style="text-align:right">Promo</th>
+            <th style="text-align:right">Contado</th>
+            <th style="text-align:right">Cuota 6M</th>
+            <th style="text-align:right">Cuota 12M</th>
             <th style="text-align:center">% Margen</th>
           </tr></thead>
           <tbody>${rows}</tbody>
