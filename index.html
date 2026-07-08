@@ -825,7 +825,47 @@ function processFile(file) {
     reader.onload = e => {
       const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      parseCSV(XLSX.utils.sheet_to_csv(ws));
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+      // Buscar fila de encabezados (hasta fila 10)
+      let hIdx = -1, hdrs = [];
+      for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        const r = rows[i].map(c => String(c).toLowerCase().trim());
+        if (r.some(h => h.includes('descripci') || h === 'nombre') &&
+            r.some(h => h.includes('costo') || h.includes('precio'))) {
+          hIdx = i; hdrs = r; break;
+        }
+      }
+
+      // Si no encuentra encabezados propios, convertir CSV normal
+      if (hIdx === -1) { parseCSV(XLSX.utils.sheet_to_csv(ws)); return; }
+
+      // Detectar columnas por nombre
+      const ci = name => hdrs.findIndex(h => h.includes(name));
+      const iDesc  = [ci('descripci'), ci('nombre')].find(i => i >= 0) ?? -1;
+      const iCosto = hdrs.findIndex(h => h.includes('costo') && !h.includes('mayor') && !h.includes('promo') && !h.includes('contado'));
+      const iCod   = [ci('codigo'), ci('código')].find(i => i >= 0) ?? -1;
+
+      if (iDesc < 0 || iCosto < 0) { parseCSV(XLSX.utils.sheet_to_csv(ws)); return; }
+
+      const esc = v => `"${String(v).replace(/"/g,'""')}"`;
+      const lines = ['nombre,costo,descripcion,modelo,codigo'];
+
+      for (let i = hIdx + 1; i < rows.length; i++) {
+        const r      = rows[i];
+        const status = String(r[0] || '').toLowerCase();
+        const desc   = String(r[iDesc] || '').trim();
+        const costo  = parseFloat(r[iCosto]) || 0;
+        const codigo = iCod >= 0 ? String(r[iCod] || '').trim() : '';
+
+        if (!desc || costo <= 0) continue;           // sin nombre o sin costo
+        if (status.includes('anterior')) continue;   // versión antigua
+        if (desc.toLowerCase().startsWith('retiro')) continue; // devolución/retiro
+        lines.push(`${esc(desc)},${costo},,,${esc(codigo)}`);
+      }
+
+      if (lines.length <= 1) { toast('No se encontraron productos válidos en el archivo'); return; }
+      parseCSV(lines.join('\n'));
     };
     reader.readAsArrayBuffer(file);
   } else {
