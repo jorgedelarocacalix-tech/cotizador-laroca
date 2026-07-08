@@ -681,11 +681,11 @@ function refCardHTML(r) {
     r.t12 ? { ico:'📆', label:'12 Meses (total)', price: r.t12, sub: `Cuota: ${lps(r.c12)}/mes · +${r.pctT12}%` } : null,
   ].filter(Boolean);
 
-  const diffTxt = r.diffPct <= 5 ? 'costo muy similar' : `costo de referencia ${lps(r.costoRef)}`;
+  const diffTxt = r.diffPct <= 5 ? 'costo idéntico' : `costo base: ${lps(r.costoRef)}`;
   return `
     <div class="ref-card-head">
-      <h3>📊 Estimado de mercado</h3>
-      <p>Referencia: <b>${r.ref.nombre}</b> (${r.ref.proveedor}) — ${diffTxt}</p>
+      <h3>📋 Precios vigentes La Roca</h3>
+      <p>Basado en: <b>${r.ref.nombre}</b> (${r.ref.proveedor}) — ${diffTxt}</p>
     </div>
     ${rows.map(row => `
     <div class="ref-row">
@@ -695,7 +695,7 @@ function refCardHTML(r) {
         <div class="ref-sub">${row.sub}</div>
       </div>
     </div>`).join('')}
-    <div class="ref-note">Los precios anteriores son estimados basados en márgenes reales del proveedor más cercano. Ajusta según condiciones del mercado.</div>`;
+    <div class="ref-note">Precios de nuestra lista vigente. Si el costo es distinto al de la lista, los precios se ajustan proporcionalmente hacia arriba.</div>`;
 }
 
 // ══════════════════════════════════════
