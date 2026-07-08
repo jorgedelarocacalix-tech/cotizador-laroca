@@ -747,15 +747,15 @@ function priceCardHTML(titulo, subtitulo, px) {
     </div>
     <div class="divider">Precios de venta</div>
     <div class="price-row">
-      <div class="price-label"><div class="ico ico-1">💵</div>Precio Cash</div>
-      <div class="price-right"><div class="price-main">${lps(px.cash)}</div></div>
-    </div>
-    <div class="price-row">
       <div class="price-label"><div class="ico ico-2">🏪</div>Mayoreo</div>
       <div class="price-right"><div class="price-main">${lps(px.mayoreo)}</div></div>
     </div>
     <div class="price-row">
-      <div class="price-label"><div class="ico ico-3">📋</div>Contado</div>
+      <div class="price-label"><div class="ico ico-1">🏷️</div>Promoción</div>
+      <div class="price-right"><div class="price-main">${lps(px.cash)}</div></div>
+    </div>
+    <div class="price-row">
+      <div class="price-label"><div class="ico ico-3">💵</div>Contado</div>
       <div class="price-right"><div class="price-main">${lps(px.pagos)}</div></div>
     </div>
     <div class="divider">Financiamiento</div>
@@ -872,8 +872,8 @@ function cotizarRapido() {
   if (ref) {
     // Aplicar piso: precios de venta nunca menores a los de la referencia de mercado
     if (ref.mayoreo)  px.mayoreo = Math.max(px.mayoreo, ref.mayoreo);
-    if (ref.promo)    px.pagos   = Math.max(px.pagos,   ref.promo);
-    if (ref.contado)  px.cash    = Math.max(px.cash,    ref.contado);
+    if (ref.promo)    px.cash    = Math.max(px.cash,    ref.promo);
+    if (ref.contado)  px.pagos   = Math.max(px.pagos,   ref.contado);
     if (ref.t6)  { px.t6 = Math.max(px.t6, ref.t6);  px.c6  = Math.max(px.c6,  ref.c6  || ref.t6/6);  }
     if (ref.t12) { px.t12= Math.max(px.t12,ref.t12); px.c12 = Math.max(px.c12, ref.c12 || ref.t12/12); }
     refEl.innerHTML = refCardHTML(ref);
