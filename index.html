@@ -632,6 +632,8 @@ function buscarReferencia(desc, costo) {
   const mContado = ref.contado / ref.costo;
   const mT6      = ref.t6  ? ref.t6  / ref.costo : null;
   const mT12     = ref.t12 ? ref.t12 / ref.costo : null;
+  const mC6      = ref.c6  ? ref.c6  / ref.costo : null;
+  const mC12     = ref.c12 ? ref.c12 / ref.costo : null;
 
   // Ratio mayoreo/promo: usar el real del proveedor, si no hay usar margen de categoría
   const catObj   = catForRef(catKey);
@@ -642,21 +644,29 @@ function buscarReferencia(desc, costo) {
     ? ref.promo / ref.costo
     : (catObj ? 1 + catObj.margen_pagos   / 100 : null);
 
+  // Escalar desde la referencia — floor: nunca mostrar menos que la referencia
+  const t6Sc  = mT6  ? costo * mT6  : null;
+  const t12Sc = mT12 ? costo * mT12 : null;
+  const c6Sc  = mC6  ? costo * mC6  : (t6Sc  ? t6Sc  / 6  : null);
+  const c12Sc = mC12 ? costo * mC12 : (t12Sc ? t12Sc / 12 : null);
+
+  const t6  = t6Sc  ? Math.round(Math.max(t6Sc,  ref.t6  || 0) * 100)/100 : null;
+  const t12 = t12Sc ? Math.round(Math.max(t12Sc, ref.t12 || 0) * 100)/100 : null;
+  const c6  = c6Sc  ? Math.round(Math.max(c6Sc,  ref.c6  || 0) * 100)/100 : null;
+  const c12 = c12Sc ? Math.round(Math.max(c12Sc, ref.c12 || 0) * 100)/100 : null;
+
   return {
     ref,
     costoInput: costo,
-    mayoreo: mMayoreo ? Math.round(costo * mMayoreo * 100)/100 : null,
-    promo:   mPromo   ? Math.round(costo * mPromo   * 100)/100 : null,
-    contado: costo * mContado,
-    t6:      mT6  ? costo * mT6  : null,
-    c6:      mT6  ? (costo * mT6) / 6   : null,
-    t12:     mT12 ? costo * mT12 : null,
-    c12:     mT12 ? (costo * mT12) / 12 : null,
+    mayoreo: mMayoreo ? Math.round(Math.max(costo * mMayoreo, ref.mayoreo || 0) * 100)/100 : null,
+    promo:   mPromo   ? Math.round(Math.max(costo * mPromo,   ref.promo   || 0) * 100)/100 : null,
+    contado: Math.round(Math.max(costo * mContado, ref.contado) * 100)/100,
+    t6, c6, t12, c12,
     pctContado: Math.round((mContado - 1) * 100),
     pctMayoreo: mMayoreo ? Math.round((mMayoreo - 1) * 100) : null,
     pctPromo:   mPromo   ? Math.round((mPromo   - 1) * 100) : null,
-    pctT6:      mT6  ? Math.round((mT6  - 1) * 100) : null,
-    pctT12:     mT12 ? Math.round((mT12 - 1) * 100) : null,
+    pctT6:      t6  ? Math.round((t6  / costo - 1) * 100) : null,
+    pctT12:     t12 ? Math.round((t12 / costo - 1) * 100) : null,
     costoRef:   ref.costo,
     diffPct:    Math.round(Math.abs(ref.costo - costo) / ref.costo * 100),
   };
