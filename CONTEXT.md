@@ -9,7 +9,7 @@ Single-file HTML → `index.html`. Desplegado en GitHub Pages y Netlify.
 ## URLs
 - **GitHub Pages**: https://jorgedelarocacalix-tech.github.io/cotizador-laroca/
 - **Repositorio**: https://github.com/jorgedelarocacalix-tech/cotizador-laroca
-- **Netlify**: (pendiente de configurar)
+- **Netlify**: https://cotizador-laroca.netlify.app
 
 ---
 
