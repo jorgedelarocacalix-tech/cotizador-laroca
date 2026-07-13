@@ -481,6 +481,8 @@ const REF = [
   {cat:'estufa',marca:'rca',nombre:'Estufa Vitrocerámica RCA 20"',modelo:'RCCR50',costo:6885,contado:15417.75,t6:22417.75,t12:29417.75,proveedor:'RCA'},
   {cat:'estufa',marca:'rca',nombre:'Estufa Eléctrica RCA 30" 4 quemadores',modelo:'RCCR7604EVC',costo:9389,contado:17797.35,t6:24797.35,t12:31797.35,proveedor:'RCA'},
   {cat:'estufa',marca:'rca',nombre:'Estufa Gas RCA 20" Ace Inox',modelo:'RCCR26',costo:2988,contado:6436,t6:9436,t12:12858,proveedor:'RCA'},
+  // RCA (Lista Junio 2026)
+  {cat:'estufa',marca:'rca',nombre:'Estufa Eléctrica RCA 20" BLK AC',modelo:'RCCR5021EVC',costo:8246.65,mayoreo:9996.65,promo:10871.65,contado:13496.65,t6:18387.65,t12:23053.65,proveedor:'RCA'},
   // Diunsa
   {cat:'estufa',marca:'mabe',nombre:'Estufa Gas Mabe 20" 4 quemadores c/respaldo',costo:5175,contado:10175,t6:15074,t12:19574,proveedor:'DIUNSA'},
   {cat:'estufa',marca:'mabe',nombre:'Estufa Gas Mabe 30" 6 quemadores negra',costo:8970,contado:13860,t6:19062,t12:24053,proveedor:'DIUNSA'},
@@ -689,23 +691,27 @@ function buscarReferencia(desc, costo) {
     ? ref.promo / ref.costo
     : (catObj ? 1 + catObj.margen_pagos   / 100 : null);
 
-  // Escalar desde la referencia — floor: nunca mostrar menos que la referencia
+  // Escalar desde la referencia — el piso (nunca menos que la referencia) solo
+  // aplica si nuestro costo es igual o mayor al costo de la referencia. Si el
+  // producto es más barato que la referencia, el precio debe escalar
+  // proporcionalmente hacia abajo, no quedarse pegado al precio de la referencia.
+  const floorOk = costo >= ref.costo;
   const t6Sc  = mT6  ? costo * mT6  : null;
   const t12Sc = mT12 ? costo * mT12 : null;
   const c6Sc  = mC6  ? costo * mC6  : (t6Sc  ? t6Sc  / 6  : null);
   const c12Sc = mC12 ? costo * mC12 : (t12Sc ? t12Sc / 12 : null);
 
-  const t6  = t6Sc  ? Math.round(Math.max(t6Sc,  ref.t6  || 0) * 100)/100 : null;
-  const t12 = t12Sc ? Math.round(Math.max(t12Sc, ref.t12 || 0) * 100)/100 : null;
-  const c6  = c6Sc  ? Math.round(Math.max(c6Sc,  ref.c6  || 0) * 100)/100 : null;
-  const c12 = c12Sc ? Math.round(Math.max(c12Sc, ref.c12 || 0) * 100)/100 : null;
+  const t6  = t6Sc  ? Math.round((floorOk ? Math.max(t6Sc,  ref.t6  || 0) : t6Sc)  * 100)/100 : null;
+  const t12 = t12Sc ? Math.round((floorOk ? Math.max(t12Sc, ref.t12 || 0) : t12Sc) * 100)/100 : null;
+  const c6  = c6Sc  ? Math.round((floorOk ? Math.max(c6Sc,  ref.c6  || 0) : c6Sc)  * 100)/100 : null;
+  const c12 = c12Sc ? Math.round((floorOk ? Math.max(c12Sc, ref.c12 || 0) : c12Sc) * 100)/100 : null;
 
   return {
     ref,
     costoInput: costo,
-    mayoreo: mMayoreo ? Math.round(Math.max(costo * mMayoreo, ref.mayoreo || 0) * 100)/100 : null,
-    promo:   mPromo   ? Math.round(Math.max(costo * mPromo,   ref.promo   || 0) * 100)/100 : null,
-    contado: Math.round(Math.max(costo * mContado, ref.contado) * 100)/100,
+    mayoreo: mMayoreo ? Math.round((floorOk ? Math.max(costo * mMayoreo, ref.mayoreo || 0) : costo * mMayoreo) * 100)/100 : null,
+    promo:   mPromo   ? Math.round((floorOk ? Math.max(costo * mPromo,   ref.promo   || 0) : costo * mPromo)   * 100)/100 : null,
+    contado: Math.round((floorOk ? Math.max(costo * mContado, ref.contado) : costo * mContado) * 100)/100,
     t6, c6, t12, c12,
     pctContado: Math.round((mContado - 1) * 100),
     pctMayoreo: mMayoreo ? Math.round((mMayoreo - 1) * 100) : null,
@@ -916,11 +922,16 @@ function cotizarRapido() {
   const ref = buscarReferencia(desc, costo);
   if (ref) {
     // Aplicar piso: precios de venta nunca menores a los de la referencia de mercado
-    if (ref.mayoreo)  px.mayoreo = Math.max(px.mayoreo, ref.mayoreo);
-    if (ref.promo)    px.cash    = Math.max(px.cash,    ref.promo);
-    if (ref.contado)  px.pagos   = Math.max(px.pagos,   ref.contado);
-    if (ref.t6)  { px.t6 = Math.max(px.t6, ref.t6);  px.c6  = Math.max(px.c6,  ref.c6  || ref.t6/6);  }
-    if (ref.t12) { px.t12= Math.max(px.t12,ref.t12); px.c12 = Math.max(px.c12, ref.c12 || ref.t12/12); }
+    // — solo si nuestro costo es igual o mayor al de la referencia. Si el producto
+    // es más barato que la referencia, no se fuerza el piso (el precio baja proporcional).
+    const floorOk = costo >= ref.costoRef;
+    if (floorOk) {
+      if (ref.mayoreo)  px.mayoreo = Math.max(px.mayoreo, ref.mayoreo);
+      if (ref.promo)    px.cash    = Math.max(px.cash,    ref.promo);
+      if (ref.contado)  px.pagos   = Math.max(px.pagos,   ref.contado);
+      if (ref.t6)  { px.t6 = Math.max(px.t6, ref.t6);  px.c6  = Math.max(px.c6,  ref.c6  || ref.t6/6);  }
+      if (ref.t12) { px.t12= Math.max(px.t12,ref.t12); px.c12 = Math.max(px.c12, ref.c12 || ref.t12/12); }
+    }
     refEl.innerHTML = refCardHTML(ref);
     refEl.classList.remove('hidden');
     document.getElementById('mini-comp').innerHTML = miniCompHTML(ref.ref.cat, costo);
