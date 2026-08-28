@@ -28,6 +28,7 @@ Single-file HTML → `index.html`. Desplegado en GitHub Pages y Netlify.
 | ⚡ Cotizar | Ingresa descripción + costo → genera Mayoreo / Promoción / Contado / 6M / 12M |
 | 🔄 Comparar | Tabla comparativa de todos los productos REF por categoría y proveedor |
 | 📥 Subir | Sube una lista `.xlsx` o `.csv` con nombre y costo → importa a Supabase |
+| 🏍️ Motos | Cotizador de Motos: plan de cuotas (Contado, Prima, Tasa mensual) → cuotas 6/12/18/24/36 meses |
 
 ---
 
@@ -97,6 +98,29 @@ Refrigeradora Samsung 14 pies       | 13685
 Cama Matrimonial Antiestress DL     | 5672.94
 Honda CB125F                        | 12000
 ```
+
+---
+
+## Cotizador de Motos (tab 🏍️ Motos)
+Calcula el plan de cuotas de una motocicleta a interés fijo (add-on) sobre el saldo financiado, replicando la lógica de la hoja "PLAN DE CUOTAS INVERSIONES CALIX 2025".
+
+**Inputs**: Precio de Contado, Prima (enganche, default L6,000), Tasa mensual % (default 4.7%).
+
+**Fórmula** (por cada plazo `n` en {6, 12, 18, 24, 36} meses):
+```
+Financiado   = Contado − Prima
+Interés      = Financiado × (Tasa/100) × n
+Cuota Mensual = (Financiado + Interés) / n
+Total a Pagar = Prima + Financiado + Interés
+```
+
+Validado contra los 5 valores reales de la hoja original (12M: L3,779.67/mes; 18M: L2,974.11/mes; 24M: L2,571.33/mes; 36M: L2,168.56/mes; 6M sin prima: L7,478.33/mes) — coincide exacto.
+
+Función JS: `calcCuotasMoto(contado, prima, tasaPct)` en `index.html`.
+
+**Marca y prima mínima**: el selector "Marca" carga desde la tabla Supabase `cotizador_motos_marcas` (`marca`, `prima_min_pct`, `activa`). Al cotizar, si la prima ingresada es menor al `prima_min_pct` de la marca × Contado, se ajusta automáticamente al mínimo (se muestra "(mínima aplicada)" y un toast). Marcas iniciales sembradas: Honda, Italika, Bajaj, Pulsar, Shineray, Zmoto — todas con 15% por defecto, editable en Admin.
+
+**Admin → Marcas de Motos**: nueva sub-pestaña en el modal de administración (`showAdmTab('motos')`) para editar el % mínimo de cada marca, agregar marcas nuevas o eliminarlas. Funciones: `renderMarcasMotoList`, `dirtyMarca`, `saveMarca`, `addMarcaMoto`, `eliminarMarcaMoto`.
 
 ---
 

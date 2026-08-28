@@ -217,6 +217,7 @@
   <button class="tab-btn active" id="t-rapido"  onclick="showTab('rapido')">⚡ Cotizar</button>
   <button class="tab-btn"        id="t-comp"    onclick="showTab('comp')">🔄 Comparar</button>
   <button class="tab-btn"        id="t-subir"   onclick="showTab('subir')">📥 Subir</button>
+  <button class="tab-btn"        id="t-motos"   onclick="showTab('motos')">🏍️ Motos</button>
 </div>
 
 <!-- ═══ TAB: BUSCAR (oculto) ═══════════════════════════ -->
@@ -375,6 +376,41 @@ Closet Maletero 4 puertas    11700"></textarea>
   </div>
 </div>
 
+<!-- ═══ TAB: COTIZADOR DE MOTOS ══════════════════════ -->
+<div class="tab-content hidden" id="tab-motos">
+  <p style="font-size:14px;color:var(--g600);margin-bottom:14px">
+    Calcula el plan de cuotas de una motocicleta a partir del precio de contado, la prima y la tasa mensual.
+  </p>
+  <div class="form-group">
+    <label>Marca</label>
+    <select id="m-marca" onchange="onMarcaMotoChange()"></select>
+  </div>
+  <div class="form-group">
+    <label>Precio de Contado</label>
+    <div class="prefix-wrap">
+      <span class="pfx">Lps.</span>
+      <input type="number" id="m-contado" placeholder="0.00" min="0" step="1" oninput="onMarcaMotoChange()">
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Prima (enganche)</label>
+    <div class="prefix-wrap">
+      <span class="pfx">Lps.</span>
+      <input type="number" id="m-prima" placeholder="0.00" min="0" step="1" value="6000">
+    </div>
+    <div id="m-prima-hint" style="font-size:12px;color:var(--g400);margin-top:6px"></div>
+  </div>
+  <div class="form-group">
+    <label>Tasa mensual (%)</label>
+    <input type="number" id="m-tasa" placeholder="4.7" min="0" step="0.1" value="4.7">
+  </div>
+  <button class="btn btn-red" onclick="cotizarMoto()">Calcular plan de cuotas</button>
+
+  <div id="moto-result" class="hidden">
+    <div id="moto-card" class="price-card"></div>
+  </div>
+</div>
+
 <!-- ═══ MODAL: PIN ════════════════════════════ -->
 <div class="modal-overlay center hidden" id="pin-modal" onclick="if(event.target===this)this.classList.add('hidden')">
   <div class="modal-box small">
@@ -396,6 +432,7 @@ Closet Maletero 4 puertas    11700"></textarea>
     <div class="adm-tabs">
       <button class="adm-tab active" id="at-cats" onclick="showAdmTab('cats')">Categorías y Márgenes</button>
       <button class="adm-tab" id="at-prod" onclick="showAdmTab('prod')">Productos</button>
+      <button class="adm-tab" id="at-motos" onclick="showAdmTab('motos')">Marcas de Motos</button>
     </div>
 
     <!-- Categorías -->
@@ -410,6 +447,24 @@ Closet Maletero 4 puertas    11700"></textarea>
     <div id="adm-prod" class="hidden">
       <div id="prod-list">
         <p style="text-align:center;color:var(--g400);padding:20px">Cargando…</p>
+      </div>
+    </div>
+
+    <!-- Marcas de Motos -->
+    <div id="adm-motos" class="hidden">
+      <p style="font-size:13px;color:var(--g400);margin-bottom:14px">
+        Define el % mínimo de prima que se exige por marca de motocicleta. El cotizador de Motos no dejará bajar la prima de ese mínimo.
+      </p>
+      <div id="motos-marcas-list"></div>
+      <div class="cat-block">
+        <h4>Agregar marca</h4>
+        <div class="mgrid">
+          <div class="mfield"><label>Marca</label>
+            <input type="text" id="new-marca-nombre" placeholder="Ej: Suzuki"></div>
+          <div class="mfield"><label>% Mínimo de prima</label>
+            <input type="number" id="new-marca-pct" placeholder="15" min="0"></div>
+        </div>
+        <button class="btn-save-cat" onclick="addMarcaMoto()">Agregar marca</button>
       </div>
     </div>
   </div>
@@ -431,7 +486,7 @@ const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'applic
 // ══════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════
-let cats = [], prods = [], csvData = [], catChanges = {};
+let cats = [], prods = [], csvData = [], catChanges = {}, motosMarcas = [], marcaChanges = {};
 
 // ══════════════════════════════════════
 //  SUPABASE
@@ -446,11 +501,13 @@ const sbDel  = (t, id)   => fetch(`${SB}/rest/v1/${t}?id=eq.${id}`, {method:'DEL
 // ══════════════════════════════════════
 async function init() {
   try {
-    [cats, prods] = await Promise.all([
+    [cats, prods, motosMarcas] = await Promise.all([
       sbGet('cotizador_categorias','activa=eq.true'),
-      sbGet('cotizador_productos', 'activo=eq.true')
+      sbGet('cotizador_productos', 'activo=eq.true'),
+      sbGet('cotizador_motos_marcas', 'activa=eq.true')
     ]);
     document.getElementById('prod-count').textContent = prods.length + ' productos';
+    poblarMarcasMoto();
   } catch(e) { toast('Error conectando a la base de datos'); }
 }
 
@@ -824,6 +881,82 @@ function priceCardHTML(titulo, subtitulo, px) {
       </div>
       <div class="price-right"><div class="price-main">${lps(px.c12)}</div><div class="price-sub">/ mes</div></div>
     </div>`;
+}
+
+// ══════════════════════════════════════
+//  TAB: MOTOS (plan de cuotas)
+// ══════════════════════════════════════
+function calcCuotasMoto(contado, prima, tasaPct) {
+  const financiado = contado - prima;
+  const tasa = tasaPct / 100;
+  return [6, 12, 18, 24, 36].map(n => {
+    const interes = financiado * tasa * n;
+    const cuota   = (financiado + interes) / n;
+    const total   = prima + financiado + interes;
+    return { n, cuota, total };
+  });
+}
+
+function poblarMarcasMoto() {
+  const sel = document.getElementById('m-marca');
+  if (!sel) return;
+  sel.innerHTML = motosMarcas.map(m => `<option value="${m.id}">${m.marca}</option>`).join('');
+  onMarcaMotoChange();
+}
+
+function marcaMotoSeleccionada() {
+  const id = parseInt(document.getElementById('m-marca').value);
+  return motosMarcas.find(m => m.id === id);
+}
+
+function onMarcaMotoChange() {
+  const marca = marcaMotoSeleccionada();
+  const hint = document.getElementById('m-prima-hint');
+  if (!hint) return;
+  if (!marca) { hint.textContent = ''; return; }
+  const contado = parseFloat(document.getElementById('m-contado').value) || 0;
+  const minPrima = contado * (marca.prima_min_pct / 100);
+  hint.textContent = contado > 0
+    ? `Mínimo para ${marca.marca}: ${marca.prima_min_pct}% = ${lps(minPrima)}`
+    : `Mínimo para ${marca.marca}: ${marca.prima_min_pct}%`;
+}
+
+function cotizarMoto() {
+  const contado = parseFloat(document.getElementById('m-contado').value) || 0;
+  let   prima   = parseFloat(document.getElementById('m-prima').value)   || 0;
+  const tasa    = parseFloat(document.getElementById('m-tasa').value)    || 0;
+  const marca   = marcaMotoSeleccionada();
+
+  if (contado <= 0) { toast('Ingresa el precio de contado'); return; }
+  if (prima > contado) { toast('La prima no puede ser mayor al precio de contado'); return; }
+
+  let primaAjustada = false;
+  if (marca) {
+    const minPrima = contado * (marca.prima_min_pct / 100);
+    if (prima < minPrima) { prima = minPrima; primaAjustada = true; }
+  }
+
+  const financiado = contado - prima;
+  const plazos = calcCuotasMoto(contado, prima, tasa);
+
+  if (primaAjustada) toast(`Prima ajustada al mínimo de ${marca.marca} (${marca.prima_min_pct}%)`);
+
+  document.getElementById('moto-card').innerHTML = `
+    <div class="price-card-head">
+      <h3>🏍️ Plan de Cuotas${marca ? ' — ' + marca.marca : ''}</h3>
+      <p>Contado ${lps(contado)} · Prima ${lps(prima)}${primaAjustada ? ' (mínima aplicada)' : ''} · Financiado ${lps(financiado)} · Tasa ${tasa}% mensual</p>
+    </div>
+    <div class="divider">Cuotas mensuales</div>
+    ${plazos.map(p => `
+    <div class="price-row">
+      <div class="price-label">
+        <div class="ico ico-4">📅</div>
+        <div><div>${p.n} Meses</div><div style="font-size:12px;color:var(--g400)">Total ${lps(p.total)}</div></div>
+      </div>
+      <div class="price-right"><div class="price-main">${lps(p.cuota)}</div><div class="price-sub">/ mes</div></div>
+    </div>`).join('')}`;
+
+  document.getElementById('moto-result').classList.remove('hidden');
 }
 
 // ══════════════════════════════════════
@@ -1460,7 +1593,7 @@ function miniCompHTML(catKey, costoInput) {
 //  TABS
 // ══════════════════════════════════════
 function showTab(tab) {
-  ['rapido','comp','subir'].forEach(t => {
+  ['rapido','comp','subir','motos'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
     document.getElementById('t-'+t).classList.toggle('active', t===tab);
   });
@@ -1491,6 +1624,7 @@ function checkPin() {
 function openAdmin() {
   renderCatsList();
   renderProdList();
+  renderMarcasMotoList();
   showAdmTab('cats');
   document.getElementById('admin-modal').classList.remove('hidden');
 }
@@ -1499,8 +1633,10 @@ function closeAdmin() { document.getElementById('admin-modal').classList.add('hi
 function showAdmTab(tab) {
   document.getElementById('adm-cats').classList.toggle('hidden', tab!=='cats');
   document.getElementById('adm-prod').classList.toggle('hidden', tab!=='prod');
+  document.getElementById('adm-motos').classList.toggle('hidden', tab!=='motos');
   document.getElementById('at-cats').classList.toggle('active', tab==='cats');
   document.getElementById('at-prod').classList.toggle('active', tab==='prod');
+  document.getElementById('at-motos').classList.toggle('active', tab==='motos');
 }
 
 // Categorías / Márgenes
@@ -1572,6 +1708,65 @@ async function eliminarProd(id) {
     document.getElementById('prod-count').textContent = prods.length + ' productos';
     renderProdList();
     toast('Producto eliminado', true);
+  } catch(e) { toast('Error al eliminar'); }
+}
+
+// Marcas de Motos
+function renderMarcasMotoList() {
+  const el = document.getElementById('motos-marcas-list');
+  if (!el) return;
+  el.innerHTML = motosMarcas.map(m => `
+    <div class="cat-block">
+      <h4>${m.marca}</h4>
+      <div class="mgrid">
+        <div class="mfield"><label>% Mínimo de prima</label>
+          <input type="number" value="${m.prima_min_pct}" min="0"
+                 onchange="dirtyMarca(${m.id},this.value)"></div>
+      </div>
+      <button class="btn-save-cat" onclick="saveMarca(${m.id})">Guardar</button>
+      <button class="btn btn-gray" style="margin-top:8px" onclick="eliminarMarcaMoto(${m.id})">Eliminar marca</button>
+    </div>`).join('');
+}
+
+function dirtyMarca(id, val) {
+  marcaChanges[id] = parseFloat(val);
+  const m = motosMarcas.find(x=>x.id===id); if (m) m.prima_min_pct = parseFloat(val);
+}
+
+async function saveMarca(id) {
+  if (marcaChanges[id] === undefined) { toast('Sin cambios pendientes'); return; }
+  try {
+    await sbPatch('cotizador_motos_marcas', id, { prima_min_pct: marcaChanges[id] });
+    delete marcaChanges[id];
+    onMarcaMotoChange();
+    toast('Marca actualizada ✓', true);
+  } catch(e) { toast('Error al guardar'); }
+}
+
+async function addMarcaMoto() {
+  const nombre = document.getElementById('new-marca-nombre').value.trim();
+  const pct    = parseFloat(document.getElementById('new-marca-pct').value);
+  if (!nombre) { toast('Ingresa el nombre de la marca'); return; }
+  if (isNaN(pct) || pct < 0) { toast('Ingresa un % mínimo válido'); return; }
+  try {
+    const [nueva] = await sbPost('cotizador_motos_marcas', { marca: nombre, prima_min_pct: pct });
+    motosMarcas.push(nueva);
+    document.getElementById('new-marca-nombre').value = '';
+    document.getElementById('new-marca-pct').value = '';
+    renderMarcasMotoList();
+    poblarMarcasMoto();
+    toast('Marca agregada ✓', true);
+  } catch(e) { toast('Error al agregar (¿ya existe esa marca?)'); }
+}
+
+async function eliminarMarcaMoto(id) {
+  if (!confirm('¿Eliminar esta marca?')) return;
+  try {
+    await sbDel('cotizador_motos_marcas', id);
+    motosMarcas = motosMarcas.filter(m=>m.id!==id);
+    renderMarcasMotoList();
+    poblarMarcasMoto();
+    toast('Marca eliminada', true);
   } catch(e) { toast('Error al eliminar'); }
 }
 
